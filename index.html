@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="css/style.css">
+    <title>Document</title>
+
+    <style>
+        img{
+            height: 200px;
+            width: 200px;
+            border: 2px solid #111;
+        }
+    </style>
+
+</head>
+<body>
+    
+    
+        <label for="title">Title</label>
+        <input type="text" name="title" id="title" required>
+        <br>
+        <label for="author">Author</label>
+        <input type="text" name="author" id="author" required>
+        <br>
+        <!-- <br>
+            <br>
+            <form class="delete">
+                <label for="id">Book id:</label>
+                <input type="text" name="id" id="id" required>
+                <br>
+                <button>Submit</button>
+                </form>
+                <br>
+                <br>
+                <form class="getdata">
+                    <label for="id">Book id:</label>
+                    <input type="text" name="id" id="id" required>
+                    <br>
+                    <button>Submit</button>
+                </form>
+
+                <br>
+                <br>
+                <br> -->
+
+        <label>Image Name</label> <input type="text" id="namebox"> <label id="extlab"></label> <br> <br>
+        <img id="myimg"> <label id="upprogress"></label> <br><br>
+
+        <button type="button" id="selbtn">Select Image</button>
+        <button id="upbtn">Upload Image</button>
+        <button id="downbtn">Retrieve Image</button>
+        <br>
+        <br>
+        
+        <button type="submit" id="submit-btn">Submit</button>
+    
+
+
+
+
+
+
+
+    <script src="js/app.js"></script>
+</body>
+</html>
+
+<script type="module">
+    // Import the functions you need from the SDKs you need
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.14.0/firebase-app.js";
+    
+    import {
+        getFirestore,
+        collection,
+        onSnapshot,
+        addDoc,
+        deleteDoc,
+        doc,
+        getDoc,
+        setDoc
+    } from 'https://www.gstatic.com/firebasejs/9.14.0/firebase-firestore.js';
+
+    import {
+            getStorage,
+            ref as sRef,
+            uploadBytesResumable,
+            getDownloadURL
+        } from 'https://www.gstatic.com/firebasejs/9.14.0/firebase-storage.js';
+
+    const firebaseConfig = {
+        apiKey: "AIzaSyBo0y52gP6kc1krN3tXDYC-2NJLhFzJvyM",
+        authDomain: "fir-authentication-79f9b.firebaseapp.com",
+        databaseURL: "https://fir-authentication-79f9b-default-rtdb.asia-southeast1.firebasedatabase.app",
+        projectId: "fir-authentication-79f9b",
+        storageBucket: "fir-authentication-79f9b.appspot.com",
+        messagingSenderId: "349450255143",
+        appId: "1:349450255143:web:77d96fdb1552d4d46a8702"
+    };
+
+    // Initialize Firebase
+    const app = initializeApp(firebaseConfig);
+
+    const db = getFirestore();
+
+        const colRef = collection(db, 'books');
+
+        onSnapshot(colRef, (snapshot) => {
+            let books = []
+            snapshot.docs.forEach((doc) => {
+                books.push({ ...doc.data(), id: doc.id })
+            })
+            console.log(books);
+        })
+        
+
+    const addBookForm = document.querySelector("#submit-btn");
+    let author = document.querySelector("#author");
+    let title = document.querySelector("#title");
+
+    let author_name, title_name;
+
+    author.onkeyup = function(){
+        author_name = author.value;
+    }
+
+    title.onkeyup = function () {
+        title_name = title.value;
+    }
+
+    let img_url; 
+    addBookForm.addEventListener('click', (e) => {
+        e.preventDefault();
+
+        addDoc(colRef, {
+            title: title_name,
+            author: author_name,
+            imgSrc: img_url,
+        })
+        .then(() => {
+            // addBookForm.reset();
+            location.reload();
+        })
+    })
+
+                // const DeleteBookForm = document.querySelector(".delete");
+                // DeleteBookForm.addEventListener('submit', (e) => {
+                //     e.preventDefault();
+
+                //     const docRef = doc(db, 'books', DeleteBookForm.id.value)
+                //     deleteDoc(docRef)
+                //     .then(() => {
+                //         DeleteBookForm.reset();
+                //     })
+                // })
+
+                // const getbookid = document.querySelector(".getdata");
+
+                // getbookid.addEventListener('submit', (e) => {
+                //     e.preventDefault();
+
+                //     const docRef = doc(db, 'books', getbookid.id.value);
+                //     onSnapshot(docRef, (doc) => {
+                //         console.log(doc.data(), doc.id);
+                //     })  
+                // })
+
+    // upload and retrieve image // 
+
+    var files = [];
+    var reader = new FileReader();
+
+    var namebox = document.getElementById("namebox");
+    var extlab = document.getElementById("extlab");
+    var myimg = document.getElementById("myimg");
+    var proglab = document.getElementById("upprogress");
+    var selbtn = document.getElementById("selbtn");
+    var upbtn = document.getElementById("upbtn");
+    var downbtn = document.getElementById("downbtn");
+
+    var input = document.createElement("input");
+    input.type = 'file';
+
+    let extension, name;
+
+    input.onchange = e => {
+        files = e.target.files;
+
+        extension = GetFileExt(files[0]);
+        name = GetFileName(files[0]);
+
+        namebox.value = name;
+        extlab.innerHTML = extension;
+
+        reader.readAsDataURL(files[0]);
+    }
+
+    reader.onload = function(){
+        myimg.src = reader.result;
+        // console.log(myimg.src);
+    }
+
+    // Select image //
+
+    selbtn.onclick = function(){
+        input.click();
+    }
+
+    function GetFileExt(file){
+        var temp = file.name.split('.');
+        var ext = temp.slice((temp.length-1), (temp.length));
+        return '.' + ext[0];
+    }
+
+    function GetFileName(file){
+        var temp = file.name.split('.');
+        var fname = temp.slice(0,-1).join('.');
+        return fname;
+    }
+
+    // upload process ///
+
+    async function UploadProcess() {
+        var ImgToUpload = files[0];
+
+        var ImgName = namebox.value + extlab.innerHTML;
+
+        const metaData = {
+            contentType: ImgToUpload.type,
+        }
+
+        const storage = getStorage();
+
+        const storageRef = sRef(storage, "Images/"+ImgName);
+
+        const UploadTask = uploadBytesResumable(storageRef, ImgToUpload, metaData);
+
+        UploadTask.on('state-changed', (snapshot) => {
+            var progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+            proglab.innerHTML = "Upload" + progress + "%";
+        },
+
+        (error) => {
+            alert('image not uploaded!!');
+        },
+
+        () => {
+            getDownloadURL(UploadTask.snapshot.ref).then((downloadURL) => {
+                SaveURLtoFirestore(downloadURL);
+                img_url = downloadURL;
+            });
+        }
+        );
+    }
+
+    // function for firestore database //
+
+    async function SaveURLtoFirestore(url){
+        var name = namebox.value;
+        var ext = extlab.innerHTML;
+
+        var ref = doc(db, "ImageLinks/"+name);
+
+        await setDoc(ref, {
+            imageName: (name+ext),
+            ImageURL: url
+        })
+
+    }
+
+    async function GetImageFromFirestore(){
+        var name = namebox.value;
+        
+        var ref = doc(db, 'ImageLinks/'+name);
+
+        const docSnap = await getDoc(ref);
+
+        if(docSnap.exists()){
+            myimg.src = docSnap.data().ImageURL;
+        }
+    }
+
+
+
+    upbtn.onclick = UploadProcess;
+    downbtn.onclick = GetImageFromFirestore;
+
+
+</script>
